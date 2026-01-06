@@ -88,25 +88,23 @@ body{
   color:var(--ink);
   font-family:"MS UI Gothic","Meiryo","Yu Gothic UI",system-ui,-apple-system,"Segoe UI",sans-serif;
   overflow-x:hidden;
-  background:
-	radial-gradient(1200px 700px at 15% 15%, rgba(255,95,174,.18), transparent 58%),
-	radial-gradient(1000px 650px at 85% 20%, rgba(84,215,255,.20), transparent 60%),
-	radial-gradient(900px 600px at 40% 92%, rgba(255,216,74,.18), transparent 60%),
-	linear-gradient(180deg, var(--bg1), var(--bg2) 52%, var(--bg3));
+  background:transparent;
 }
 
 /* シール散りばめ */
 body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  opacity:.55;
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;          /* いちばん後ろ */
+  pointer-events: none; /* クリック邪魔しない */
+
+  /* ↓ここに今の背景をそのまま移植する */
   background:
-	radial-gradient(circle at 10px 10px, rgba(255,95,174,.25) 2px, transparent 3px) 0 0 / 48px 48px,
-	radial-gradient(circle at 30px 22px, rgba(84,215,255,.25) 2px, transparent 3px) 0 0 / 64px 64px,
-	radial-gradient(circle at 22px 34px, rgba(255,216,74,.25) 2px, transparent 3px) 0 0 / 56px 56px;
-  mix-blend-mode:multiply;
+    radial-gradient(circle at 15% 10%, rgba(255, 200, 230, .6), transparent 55%),
+    radial-gradient(circle at 85% 20%, rgba(180, 220, 255, .55), transparent 55%),
+    radial-gradient(circle at 40% 90%, rgba(210, 255, 230, .5), transparent 55%),
+    linear-gradient(180deg, #fff 0%, #f8f5ff 40%, #f6fbff 100%);
 }
 
 /* “透け”完全禁止（念のため） */
@@ -1151,4 +1149,5 @@ dialog::backdrop{ background: rgba(42,33,80,.35); }
 	max-width: 100%;
 	min-width: 0;
   }
+
 }
