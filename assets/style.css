@@ -101,10 +101,10 @@ body::before{
 
   /* ↓ここに今の背景をそのまま移植する */
   background:
-    radial-gradient(circle at 15% 10%, rgba(255, 200, 230, .6), transparent 55%),
-    radial-gradient(circle at 85% 20%, rgba(180, 220, 255, .55), transparent 55%),
-    radial-gradient(circle at 40% 90%, rgba(210, 255, 230, .5), transparent 55%),
-    linear-gradient(180deg, #fff 0%, #f8f5ff 40%, #f6fbff 100%);
+    radial-gradient(1200px 700px at 15% 15%, rgba(255,95,174,.18), transparent 58%),
+	radial-gradient(1000px 650px at 85% 20%, rgba(84,215,255,.20), transparent 60%),
+	radial-gradient(900px 600px at 40% 92%, rgba(255,216,74,.18), transparent 60%),
+	linear-gradient(180deg, var(--bg1), var(--bg2) 52%, var(--bg3));
 }
 
 /* “透け”完全禁止（念のため） */
@@ -1151,3 +1151,4 @@ dialog::backdrop{ background: rgba(42,33,80,.35); }
   }
 
 }
+
