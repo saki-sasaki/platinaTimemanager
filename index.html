@@ -350,6 +350,7 @@
 
 			// save: まずローカル保存（保険）→ Sheetsへ送信（失敗してもUI止めない）
 			function saveDay(bizDate, groups){
+				if (isLoadingDay) return;
 				localStorage.setItem(storageKey(bizDate), JSON.stringify(groups));
 
 				apiSaveDay(bizDate, groups)
@@ -367,6 +368,21 @@
 			let tempOccupied = new Set();
 			let sortByEnd = false;
 
+			// ===== Loading lock =====
+			let isLoadingDay = false;
+
+			function setLoadingDay(on){
+				isLoadingDay = on;
+
+				// ボタンを無効化
+				if (btnNew) btnNew.disabled = on;
+				if (dlgSave) dlgSave.disabled = on;
+
+				// “読み込み中”表示（任意）
+				if (headerStatus && on){
+					headerStatus.innerHTML = `<div class="hs-date">読み込み中…</div>`;
+				}
+			}
 
 			/* ===== Ticket No ===== */
 			const nextTicketNo = () => {
@@ -507,9 +523,14 @@
 				currentBizDate = newDateStr;
 				datePicker.value = currentBizDate;
 
-				groups = await loadDay(currentBizDate);  // ★ここが本体
-				normalizeAll();
-				renderAll();
+				setLoadingDay(true);
+				try{
+    				groups = await loadDay(currentBizDate);  // ★ここが本体
+					normalizeAll();
+					renderAll();
+				} finally {
+					setLoadingDay(false);
+				}
 			};
 
 			const addDaysToBizDate = (bizDate, delta) => {
@@ -1119,7 +1140,11 @@
 
 
 			/* ===== Events ===== */
-			btnNew.addEventListener("click", () => openNewDialog("BOX1"));
+			btnNew.addEventListener("click", () => {
+				if (isLoadingDay) return alert("読み込み中！終わってから新規してね🙏");
+				openNewDialog("BOX1");
+			});
+
 			btnToday.addEventListener("click", () => setBizDate(businessDateFor(new Date())));
 			btnPrev.addEventListener("click",  () => setBizDate(addDaysToBizDate(currentBizDate, -1)));
 			btnNext.addEventListener("click",  () => setBizDate(addDaysToBizDate(currentBizDate, +1)));
@@ -1139,7 +1164,11 @@
 
 			dlgClose.addEventListener("click", () => dlg.close());
 			dlgCancel.addEventListener("click", () => dlg.close());
-			dlgSave.addEventListener("click", saveDialog);
+			dlgSave.addEventListener("click", () => {
+				if (isLoadingDay) return alert("読み込み中は保存できないよ🙏（消える事故防止）");
+				saveDialog();
+			});
+
 
 			dlgDelete.addEventListener("click", () => {
 				if (!editingId) return;
@@ -1155,6 +1184,7 @@
 			// zone クリックで新規
 			document.querySelectorAll(".zone").forEach((zone) => {
 				zone.addEventListener("click", (e) => {
+					if (isLoadingDay) return;
 					if (e.target.closest(".guest-card")) return;
 					if (e.target.closest(".seat-stamp")) return;
 					const seat = zone.dataset.seat;
@@ -1170,8 +1200,13 @@
 			async function boot(){
 				datePicker.value = currentBizDate;
 
-				groups = await loadDay(currentBizDate);
-				normalizeAll();
+				setLoadingDay(true);
+				try{
+					groups = await loadDay(currentBizDate);
+					normalizeAll();
+				} finally {
+					setLoadingDay(false);
+				}
 
 				initSortable();
 				renderAll();
