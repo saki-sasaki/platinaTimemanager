@@ -377,11 +377,15 @@ header{
   color:var(--ink);
   border: var(--cardB) solid var(--cardLine);
   box-shadow:
-	0 8px 0 rgba(68,50,140,.14),
-	0 16px 22px rgba(68,50,140,.16);
+    0 8px 0 rgba(68,50,140,.14),
+    0 16px 22px rgba(68,50,140,.16);
   cursor:pointer;
-  user-select:none;
   overflow:hidden;
+
+  -webkit-user-select: none;
+  user-select: none;
+
+  touch-action: manipulation; /* ← noneじゃなくこれ */
 }
 
 /* ヘッダー帯 */
@@ -1151,4 +1155,5 @@ dialog::backdrop{ background: rgba(42,33,80,.35); }
   }
 
 }
+
 
