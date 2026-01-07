@@ -906,7 +906,22 @@
 					</div>
 				`;
 
-				card.addEventListener("click", () => openEditDialog(g.id));
+				const dots = card.querySelector(".card-dots");
+				if (dots){
+					dots.addEventListener("pointerdown", (e) => e.stopPropagation());
+					dots.addEventListener("click", (e) => e.stopPropagation());
+				}
+
+				const open = (ev) => {
+					if (isDragging) return;      // ドラッグ中の誤爆防止
+					ev.preventDefault();
+					ev.stopPropagation();
+					openEditDialog(g.id);
+				};
+
+				card.addEventListener("click", open);
+				card.addEventListener("pointerup", open); // ★スマホ保険
+
 				return card;
 			};
 
@@ -1113,13 +1128,15 @@
 						group: "seats",
 						animation: 160,
 						draggable: ".guest-card",
+						handle: ".card-dots",            // ★これ追加：●●●だけでドラッグ
+						delay: 150,                      // ★スマホで誤ドラッグ防止
+						delayOnTouchOnly: true,
+						touchStartThreshold: 6,
 						onStart: () => { isDragging = true; },
 						onEnd: (evt) => {
 							const id = evt.item?.dataset?.id;
 							const toSeat = evt.to?.id?.replace("seat-","");
 							if (id && toSeat) movePrimary(id, toSeat);
-
-							// click誤爆を避けるため、次tickで解除
 							setTimeout(() => { isDragging = false; }, 0);
 						}
 					});
