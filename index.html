@@ -888,39 +888,33 @@
 						<div class="card-x">×</div>
 					</div>
 					<div class="card-body">
-						${
-							isBox
-								? `
-									<div class="box-no">${escapeHtml(displayName)}</div>
-									<div class="box-time">${inT} - ${dueT}</div>
-									<div class="box-rem">${escapeHtml(remText)}</div>
-									<div class="box-meta">${escapeHtml(typeText)} / ${Number(g.partySize||0)}名</div>
-								`
-								: `
-									<div class="gc-name">${escapeHtml(displayName)}</div>
-									<div class="gc-rem">${escapeHtml(remText)}</div>
-									<div class="gc-time">${inT} - ${dueT}</div>
-									<div class="gc-meta">${escapeHtml(typeText)} / ${Number(g.partySize||0)}名</div>
-								`
+						${isBox
+							? `
+								<div class="box-no">${escapeHtml(displayName)}</div>
+								<div class="box-time">${inT} - ${dueT}</div>
+								<div class="box-rem">${escapeHtml(remText)}</div>
+								<div class="box-meta">${escapeHtml(typeText)} / ${Number(g.partySize||0)}名</div>
+							`
+							: `
+								<div class="gc-name">${escapeHtml(displayName)}</div>
+								<div class="gc-rem">${escapeHtml(remText)}</div>
+								<div class="gc-time">${inT} - ${dueT}</div>
+								<div class="gc-meta">${escapeHtml(typeText)} / ${Number(g.partySize||0)}名</div>
+							`
 						}
 					</div>
 				`;
 
-				const dots = card.querySelector(".card-dots");
-				if (dots){
-					dots.addEventListener("pointerdown", (e) => e.stopPropagation());
-					dots.addEventListener("click", (e) => e.stopPropagation());
-				}
-
 				const open = (ev) => {
-					if (isDragging) return;      // ドラッグ中の誤爆防止
+					if (isDragging) return;                 // ドラッグ中は無視
+					if (ev.target.closest(".card-dots")) return; // ●●●を触ってる時は編集開かない
 					ev.preventDefault();
 					ev.stopPropagation();
 					openEditDialog(g.id);
 				};
 
 				card.addEventListener("click", open);
-				card.addEventListener("pointerup", open); // ★スマホ保険
+				card.addEventListener("pointerup", open); // スマホ保険
 
 				return card;
 			};
@@ -1118,6 +1112,7 @@
 
 			/* ===== Drag & Drop ===== */
 			let isDragging = false;
+			let justDraggedAt = 0;
 
 			const initSortable = () => {
 				for (const seat of SEATS){
@@ -1128,15 +1123,19 @@
 						group: "seats",
 						animation: 160,
 						draggable: ".guest-card",
-						handle: ".card-dots",            // ★これ追加：●●●だけでドラッグ
-						delay: 150,                      // ★スマホで誤ドラッグ防止
+
+						handle: ".card-dots",        // ← ●●●だけでドラッグ
+						delay: 150,
 						delayOnTouchOnly: true,
 						touchStartThreshold: 6,
+
 						onStart: () => { isDragging = true; },
 						onEnd: (evt) => {
 							const id = evt.item?.dataset?.id;
 							const toSeat = evt.to?.id?.replace("seat-","");
 							if (id && toSeat) movePrimary(id, toSeat);
+
+							justDraggedAt = Date.now();
 							setTimeout(() => { isDragging = false; }, 0);
 						}
 					});
