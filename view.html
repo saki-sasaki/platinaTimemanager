@@ -170,15 +170,25 @@
       const storageKey = (bizDate) => `platinum_ro_day_${bizDate}`;
 
       async function loadDay(bizDate){
+        if (headerStatus){
+          headerStatus.innerHTML = `<div class="hs-date">更新中…</div>`;
+        }
+
         try{
           const data = await apiGetDay(bizDate);
-          localStorage.setItem(storageKey(bizDate), JSON.stringify(data)); // キャッシュだけ
+          localStorage.setItem(storageKey(bizDate), JSON.stringify(data));
           return data;
         }catch{
           const raw = localStorage.getItem(storageKey(bizDate));
           if (!raw) return [];
-          try { const data = JSON.parse(raw); return Array.isArray(data) ? data : []; }
-          catch { return []; }
+          try {
+            const data = JSON.parse(raw);
+            return Array.isArray(data) ? data : [];
+          } catch {
+            return [];
+          }
+        } finally {
+          
         }
       }
 
@@ -437,11 +447,12 @@
           const data = await loadDay(currentBizDate);
           groups = (data || []).map(normalizeGroup);
           renderAll();
-        }, 30 * 1000);
+        }, 60 * 1000);
       }
 
       boot();
     })();
   </script>
 </body>
+
 </html>
