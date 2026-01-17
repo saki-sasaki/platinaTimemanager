@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>プラチナ 新規リピート率</title>
+
+  <!-- 共通CSSがあるなら（無ければ消してOK） -->
+  <link rel="stylesheet" href="assets/style.css">
+
+  <style>
+    /* =========================
+       New Tracker (standalone)
+       ========================= */
+
+    :root{
+      --ink:   var(--ink, #2a2150);
+      --muted: var(--muted, rgba(42,33,80,.72));
+
+      --r: 16px;
+      --r2: 22px;
+
+      --pink:  var(--pink,  #ff5fae);
+      --cyan:  var(--cyan,  #54d7ff);
+      --accent:var(--accent,#6b56ff);
+
+      --line:  rgba(107,86,255,.18);
+      --shadow: 0 10px 22px rgba(68,50,140,.14);
+
+      /* ベベルが共通にある場合はそれ使う。無ければ“それっぽく” */
+      --bevel-out: var(--bevel-out,
+        inset 0 2px 0 rgba(255,255,255,.85),
+        inset 0 -2px 0 rgba(68,50,140,.12)
+      );
+      --bevel-in: var(--bevel-in,
+        inset 0 2px 6px rgba(68,50,140,.16)
+      );
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      color:var(--ink);
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(245,242,255,.92));
+      font-family: Meiryo, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .app{
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 12px 14px 22px;
+    }
+
+    /* ===== header ===== */
+    header{
+      border-radius: var(--r2);
+      border:2px solid rgba(107,86,255,.55);
+      background: linear-gradient(180deg, #ffffff, #f1ecff);
+      box-shadow: var(--shadow), var(--bevel-out);
+      padding: 12px;
+
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width: 240px;
+    }
+    .title h1{
+      margin:0;
+      font-size:18px;
+      font-weight:1000;
+      letter-spacing:.02em;
+    }
+    .sub{
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .controls{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .btn{
+      appearance:none;
+      border:2px solid rgba(107,86,255,.55);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:1000;
+      font-size:13px;
+      cursor:pointer;
+      user-select:none;
+      background: linear-gradient(180deg, #ffffff, #f3ecff);
+      color:var(--ink);
+      box-shadow: var(--bevel-out);
+      white-space:nowrap;
+    }
+    .btn:active{ transform: translateY(1px); box-shadow: var(--bevel-in); }
+    .btn.primary{
+      border-color: rgba(255,95,174,.70);
+      background: linear-gradient(180deg, #fff, #ffe1f1);
+      color:#3b1740;
+    }
+    .btn.ghost{
+      border-color: rgba(84,215,255,.60);
+      background: linear-gradient(180deg, #ffffff, #eaf7ff);
+    }
+    .btn[disabled]{ opacity:.65; cursor:not-allowed; transform:none; }
+
+    /* ===== panel ===== */
+    .panel{
+      margin-top:12px;
+      border-radius: var(--r2);
+      border:2px solid rgba(107,86,255,.55);
+      background: linear-gradient(180deg, #ffffff, #f7f2ff);
+      box-shadow: var(--shadow), var(--bevel-out);
+      overflow:hidden;
+    }
+
+    .panelHead{
+      padding:12px;
+      border-bottom:1px solid rgba(107,86,255,.16);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.78)),
+        radial-gradient(900px 260px at 0% 0%, rgba(255,95,174,.12), transparent 60%),
+        radial-gradient(900px 260px at 100% 0%, rgba(84,215,255,.12), transparent 60%);
+    }
+
+    .pillRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .pill{
+      border:2px solid rgba(107,86,255,.18);
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--bevel-out);
+      color: rgba(20,12,40,.92);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 1000;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    .content{
+      padding: 12px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .sectionTitle{
+      font-weight:1000;
+      font-size:13px;
+      color: rgba(42,33,80,.92);
+      margin: 2px 0 10px;
+    }
+    .sectionTitle .small{
+      font-size:12px;
+      font-weight:900;
+      color: var(--muted);
+      margin-left: 6px;
+      white-space:nowrap;
+    }
+
+    /* ===== list (1件=1行 / 4列) ===== */
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+
+    .row{
+      border-radius: 16px;
+      border: 2px solid rgba(255,95,174,.22);
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--bevel-out), 0 8px 16px rgba(68,50,140,.08);
+      padding: 10px 12px;
+
+      display:grid;
+      grid-template-columns: 112px 1fr 104px 140px; /* 初来店日 / 名前 / 経過 / チェック */
+      align-items:center;
+      gap: 10px;
+
+      min-height: 56px;
+    }
+
+    .dateChip{
+      justify-self:start;
+      border-radius: 999px;
+      padding: 6px 10px;
+      border:2px solid rgba(107,86,255,.18);
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--bevel-out);
+      font-weight:1000;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .name{
+      font-weight:1000;
+      font-size:14px;
+      letter-spacing:.01em;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
+    }
+
+    .age{
+      justify-self:start;
+      font-size:12px;
+      font-weight:1000;
+      color: rgba(42,33,80,.80);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:2px solid rgba(107,86,255,.16);
+      background: rgba(255,255,255,.82);
+      white-space:nowrap;
+    }
+
+    .rowRight{
+      justify-self:end;
+    }
+
+    .checkWrap{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:2px solid rgba(84,215,255,.30);
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--bevel-out);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .checkWrap input{
+      width:18px;
+      height:18px;
+      accent-color: var(--pink);
+    }
+    .checkWrap .txt{
+      font-size:12px;
+      font-weight:1000;
+      color: rgba(42,33,80,.92);
+    }
+
+    /* チェック済み（履歴）は落ち着かせる */
+    .row.checked{
+      border-color: rgba(107,86,255,.18);
+      background: rgba(255,255,255,.88);
+      opacity: .95;
+    }
+    .row.checked .checkWrap{
+      border-color: rgba(107,86,255,.18);
+    }
+
+    /* empty / err */
+    .empty{
+      padding: 18px 12px;
+      text-align:center;
+      color: var(--muted);
+      font-weight:1000;
+      white-space:pre-wrap;
+    }
+
+    .err{
+      display:none;
+      border-radius: 16px;
+      border:2px solid rgba(255,95,174,.38);
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--bevel-out);
+      padding: 10px 12px;
+      font-weight:900;
+      font-size:12px;
+      color: rgba(70,18,45,.92);
+      white-space:pre-wrap;
+    }
+
+    /* ===== fold(details) ===== */
+    .fold{
+      border-radius: var(--r2);
+      border:2px solid rgba(107,86,255,.35);
+      background: rgba(255,255,255,.90);
+      box-shadow: var(--bevel-out);
+      padding: 8px 10px;
+    }
+    .fold > summary{
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+      font-weight:1000;
+      font-size:13px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 6px 4px;
+    }
+    .fold > summary::-webkit-details-marker{ display:none; }
+
+    /* ===== mobile ===== */
+    @media (max-width: 640px){
+      header{ align-items:flex-start; }
+
+      .row{
+        grid-template-columns: 120px 1fr;
+        grid-template-areas:
+          "date name"
+          "age  check";
+      }
+      .dateChip{ grid-area: date; }
+      .name{ grid-area: name; }
+      .age{ grid-area: age; }
+      .rowRight{ grid-area: check; justify-self:end; }
+
+      .checkWrap .txt{ display:none; }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1>プラチナ 新規リピート率</h1>
+        <div class="sub" id="subNote">同期して一覧を作るよ</div>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="btnSync">＋ 同期（newを取り込む）</button>
+        <button class="btn ghost" id="btnReload">更新</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panelHead">
+        <div class="pillRow" id="pillRow"> 
+            <span class="pill">全体リピート率：-</span>
+          <span class="pill">30日以内：-</span>
+          <span class="pill">90日以内：-</span>
+          <span class="pill">180日以内：-</span>
+        </div>
+        <div class="pillRow">
+          <span class="pill" id="updatedAt">更新：-</span>
+        </div>
+      </div>
+
+      <div class="content">
+        <div>
+          <div class="sectionTitle">
+            未チェック一覧 <span class="small">（最新が上 / チェックすると下の履歴へ）</span>
+          </div>
+          <div class="list" id="listOpen"></div>
+          <div class="empty" id="emptyOpen" style="display:none;">未チェックがありません🍬</div>
+        </div>
+
+        <details class="fold" id="foldDone">
+          <summary>
+            <span>チェック済み履歴</span>
+            <span id="doneCount">0件</span>
+          </summary>
+
+          <div style="margin-top:10px;">
+            <div class="list" id="listDone"></div>
+            <div class="empty" id="emptyDone" style="display:none;">履歴がまだありません📝</div>
+          </div>
+        </details>
+
+        <div class="err" id="errBox"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+  "use strict";
+
+  /* ====== 設定（ここだけ自分のURLに） ====== */
+  const API_URL = "https://script.google.com/macros/s/AKfycbzEmg4re7mtYNcktLIk2hodRzuREBJsZHyHG3Nh_fep-FhGjm7TNcYCqRRaQAjRWKrghA/exec";
+  const ENDPOINTS = {
+    sync: () => `${API_URL}?action=newtracker_sync`,
+    list: (onlyOpen) => `${API_URL}?action=newtracker_list&onlyOpen=${onlyOpen ? 1 : 0}`,
+    check: ({key, checkedAt}) =>
+      `${API_URL}?action=newtracker_check&key=${encodeURIComponent(key)}&checkedAt=${encodeURIComponent(checkedAt||"")}`
+  };
+
+  const $ = (s)=>document.querySelector(s);
+
+  function showErr(e){
+    const box = $("#errBox");
+    box.style.display = "block";
+    box.textContent = String(e && (e.stack || e.message) || e);
+  }
+  function clearErr(){
+    const box = $("#errBox");
+    box.style.display = "none";
+    box.textContent = "";
+  }
+
+  /* ====== JSON / JSONP（file://でも動く保険） ====== */
+  function jsonp(url){
+    return new Promise((resolve, reject)=>{
+      const cb = "__cb_" + Math.random().toString(36).slice(2);
+      const s = document.createElement("script");
+      const sep = url.includes("?") ? "&" : "?";
+      s.src = url + sep + "callback=" + cb;
+
+      const timer = setTimeout(()=>{
+        cleanup();
+        reject(new Error("JSONP timeout"));
+      }, 12000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        try{ delete window[cb]; }catch{}
+        if(s && s.parentNode) s.parentNode.removeChild(s);
+      }
+
+      window[cb] = (data)=>{
+        cleanup();
+        resolve(data);
+      };
+
+      s.onerror = ()=>{
+        cleanup();
+        reject(new Error("JSONP failed"));
+      };
+
+      document.head.appendChild(s);
+    });
+  }
+
+  async function fetchJSON(url){
+    // file:// のときは JSONP優先（CORS回避）
+    if(location.protocol === "file:"){
+      return await jsonp(url);
+    }
+    const res = await fetch(url, { method:"GET", cache:"no-store" });
+    const text = await res.text();
+    try{ return JSON.parse(text); }catch{}
+    // もしGAS側がJSONPで返してたら抽出
+    const m = text.match(/^[\s\w$.]+\(\s*([\s\S]*)\s*\)\s*;?\s*$/);
+    if(m){ return JSON.parse(m[1]); }
+    throw new Error("Non-JSON response: " + text.slice(0,160));
+  }
+
+  /* ====== date util ====== */
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function todayYMD(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+  function parseYMD(s){
+    const m = String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m) return null;
+    return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+  }
+  function daysBetween(aYMD, bYMD){
+    const a = parseYMD(aYMD);
+    const b = parseYMD(bYMD);
+    if(!a || !b) return null;
+    return Math.floor((b.getTime() - a.getTime()) / 86400000);
+  }
+  function daysSince(aYMD){
+    const a = parseYMD(aYMD);
+    if(!a) return null;
+    const now = new Date();
+    const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.floor((b.getTime() - a.getTime()) / 86400000);
+  }
+
+  /* ====== pills ====== */
+  function setPills({openCount, doneCount, overall, m1, m3, m6}){
+  const row = $("#pillRow");
+  row.innerHTML = "";
+  const pill = (t)=>{ const s=document.createElement("span"); s.className="pill"; s.textContent=t; return s; };
+
+  row.append(
+    pill(`全体リピート率：${overall}`),
+    pill(`30日以内：${m1}`),
+    pill(`90日以内：${m3}`),
+    pill(`180日以内：${m6}`)
+  );
+}
+
+  function calcRates(doneItems, openCount){
+  const doneN = doneItems.length;
+  const totalN = doneN + (openCount || 0);
+
+  // 全体リピート率（分母=全件）
+  const overall = (totalN === 0)
+    ? "-"
+    : `${Math.round((doneN/totalN)*100)}%（${doneN}/${totalN}）`;
+
+  // 期間別（分母=チェック済み件数）
+  if(doneN === 0){
+    return { overall, m1:"-", m3:"-", m6:"-" };
+  }
+
+  let c1=0, c3=0, c6=0;
+  for(const it of doneItems){
+    const d = daysBetween(it.firstNewdate, it.checkedAt);
+    if(d == null) continue;
+    if(d <= 30) c1++;
+    if(d <= 90) c3++;
+    if(d <= 180) c6++;
+  }
+
+  const pct = (x)=> `${Math.round((x/doneN)*100)}%（${x}/${doneN}）`;
+  return { overall, m1:pct(c1), m3:pct(c3), m6:pct(c6) };
+}
+
+  /* ====== render: 1行4列 ====== */
+  function fmtSlash(ymd){
+    return String(ymd||"").replaceAll("-","/");
+  }
+  function ageLabelOpen(days){
+    if(days == null) return "経過-日";
+    return `経過${days}日`;
+  }
+  function ageLabelDone(first, checked){
+    const d = daysBetween(first, checked);
+    return `${fmtSlash(checked)}（経過${d ?? "-"}日）`;
+  }
+
+  function mkRowOpen(it){
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const date = document.createElement("div");
+    date.className = "dateChip";
+    date.textContent = fmtSlash(it.firstNewdate);
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = it.name;
+
+    const ds = daysSince(it.firstNewdate);
+    const age = document.createElement("div");
+    age.className = "age";
+    age.textContent = ageLabelOpen(ds);
+
+    const right = document.createElement("div");
+    right.className = "rowRight";
+
+    const chk = document.createElement("label");
+    chk.className = "checkWrap";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = false;
+
+    const txt = document.createElement("span");
+    txt.className = "txt";
+    txt.textContent = "";
+
+    input.addEventListener("change", async ()=>{
+      if(!input.checked) return;
+      input.disabled = true;
+      try{
+        await fetchJSON(ENDPOINTS.check({ key: it.key, checkedAt: todayYMD() }));
+        await loadAll();
+      }catch(e){
+        showErr(e);
+      }finally{
+        input.disabled = false;
+      }
+    });
+
+    chk.append(input, txt);
+    right.append(chk);
+
+    row.append(date, name, age, right);
+    return row;
+  }
+
+  function mkRowDone(it){
+    const row = document.createElement("div");
+    row.className = "row checked";
+
+    const date = document.createElement("div");
+    date.className = "dateChip";
+    date.textContent = fmtSlash(it.firstNewdate);
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = it.name;
+
+    const age = document.createElement("div");
+    age.className = "age";
+    age.textContent = ageLabelDone(it.firstNewdate, it.checkedAt);
+
+    const right = document.createElement("div");
+    right.className = "rowRight";
+
+    const chk = document.createElement("label");
+    chk.className = "checkWrap";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = true;
+
+    const txt = document.createElement("span");
+    txt.className = "txt";
+    txt.textContent = "";
+
+    input.addEventListener("change", async ()=>{
+      // 戻す（checkedAt空にする）
+      if(input.checked) return;
+      input.disabled = true;
+      try{
+        await fetchJSON(ENDPOINTS.check({ key: it.key, checkedAt: "" }));
+        await loadAll();
+      }catch(e){
+        showErr(e);
+      }finally{
+        input.disabled = false;
+      }
+    });
+
+    chk.append(input, txt);
+    right.append(chk);
+
+    row.append(date, name, age, right);
+    return row;
+  }
+
+  /* ====== load/sync ====== */
+  async function loadAll(){
+    clearErr();
+    $("#subNote").textContent = "読み込み中…";
+    $("#updatedAt").textContent = "更新：-";
+
+    const data = await fetchJSON(ENDPOINTS.list(false));
+    if(!data || data.ok !== true) throw new Error(data && data.error ? data.error : "list failed");
+
+    const items = Array.isArray(data.items) ? data.items : [];
+    const open = items.filter(x=>!x.checkedAt);
+    const done = items.filter(x=>!!x.checkedAt);
+
+    const sorter = (a,b)=>{
+      const d = String(b.firstNewdate).localeCompare(String(a.firstNewdate));
+      if(d) return d;
+      return String(b.checkInAt).localeCompare(String(a.checkInAt));
+    };
+    open.sort(sorter);
+    done.sort(sorter);
+
+    const rates = calcRates(done, open.length);
+    setPills({
+  overall: rates.overall,
+  m1: rates.m1,
+  m3: rates.m3,
+  m6: rates.m6
+});
+
+    const listOpen = $("#listOpen");
+    listOpen.innerHTML = "";
+    for(const it of open) listOpen.appendChild(mkRowOpen(it));
+    $("#emptyOpen").style.display = open.length ? "none" : "block";
+
+    const listDone = $("#listDone");
+    listDone.innerHTML = "";
+    for(const it of done) listDone.appendChild(mkRowDone(it));
+    $("#emptyDone").style.display = done.length ? "none" : "block";
+
+    $("#updatedAt").textContent = `更新：${new Date().toLocaleString("ja-JP")}`;
+    $("#subNote").textContent = `未チェック ${open.length} / 履歴 ${done.length}`;
+    $("#doneCount").textContent = `${done.length}件`;
+  }
+
+  async function sync(){
+    clearErr();
+    $("#subNote").textContent = "同期中…";
+    const r = await fetchJSON(ENDPOINTS.sync());
+    if(!r || r.ok !== true) throw new Error(r && r.error ? r.error : "sync failed");
+    $("#subNote").textContent = r.message || "同期しました";
+    await loadAll();
+  }
+
+  $("#btnSync").addEventListener("click", ()=>sync().catch(showErr));
+  $("#btnReload").addEventListener("click", ()=>loadAll().catch(showErr));
+
+  loadAll().catch(showErr);
+  </script>
+</body>
+</html>

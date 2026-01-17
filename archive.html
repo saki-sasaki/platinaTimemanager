@@ -1,0 +1,1633 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>プラチナ 来店アーカイブ</title>
+
+  <!-- 共通CSS（卓管理ツール側と同じやつ） -->
+  <link rel="stylesheet" href="assets/style.css">
+
+  <style>
+/* =========================================================
+   PLATINA ARCHIVE (PC ONLY / Single Source of Truth)
+   - Mobile専用CSSは完全撤廃（同じ見た目で縮むだけ）
+   - Fix:
+     1) 受付表の縁２重を根絶（紫枠などを消す）
+     2) 区分列を少し広げる
+   ========================================================= */
+
+/* ===== tokens ===== */
+:root{
+  --arch-line:  var(--accent-12);
+  --arch-frame: var(--accent-55);
+  --arch-frameW: 2px;
+
+  --pagePadX: 25px;
+
+  --sumHi: rgba(255,255,255,.92);
+  --sumLo: rgba(68,50,140,.12);
+
+  /* table frame (single) */
+  --tblFrame: rgba(255,95,174,.45);     /* 外枠ピンク */
+  --tblLine:  rgba(255,95,174,.20);     /* 仕切り薄ピンク */
+  --tblLine2: rgba(107,86,255,.00);     /* ★紫は使わない（0で殺す） */
+}
+
+/* ===== app width ===== */
+body.archive .app{
+  max-width:1150px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   Header
+   ========================================================= */
+body.archive header.arch-header{
+  margin-top: 10px;
+  padding-left:  var(--pagePadX);
+  padding-right: var(--pagePadX);
+
+  border-radius: var(--r2);
+  border: var(--arch-frameW) solid var(--arch-frame);
+  background: linear-gradient(180deg, #ffffff, #f1ecff);
+  box-shadow: var(--shadow), var(--bevel-out);
+}
+
+body.archive header.arch-header .topbar{
+  display:flex;
+  align-items:center;
+  width:100%;
+  gap:12px;
+  flex-wrap:nowrap;
+}
+
+/* ★ヘッダー月タイトル 左寄せ */
+body.archive .arch-left{
+  flex:1 1 auto;
+  min-width: 180px;
+  text-align:left;
+}
+body.archive .arch-month{
+  font-size: 22px;
+  font-weight: 1000;
+  letter-spacing: .02em;
+  color: var(--ink);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+body.archive .arch-controls{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:nowrap;
+}
+
+/* field（ピル） */
+body.archive header.arch-header .field{
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+
+  border: 2px solid var(--accent-35);
+  background: linear-gradient(180deg, #ffffff, #eaf7ff);
+  box-shadow: var(--bevel-out);
+
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width: 0;
+}
+body.archive header.arch-header .field .ico{
+  line-height: 1;
+  opacity: .9;
+  user-select:none;
+}
+body.archive header.arch-header .field input{
+  border: 0;
+  outline: 0;
+  background: transparent;
+  height: 100%;
+  font-weight: 1000;
+  color: var(--ink);
+  font-size: 13px;
+  min-width: 140px;
+}
+
+/* btn */
+body.archive .btn{
+  appearance:none;
+  border:2px solid var(--accent-55);
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:1000;
+  font-size:13px;
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+  background: linear-gradient(180deg, #ffffff, #f3ecff);
+  color:var(--ink);
+  box-shadow: var(--bevel-out);
+}
+body.archive .btn:active{ transform: translateY(1px); box-shadow: var(--bevel-in); }
+
+body.archive header.arch-header .btn.ghost{
+  border-color: rgba(84,215,255,.55);
+  background: linear-gradient(180deg, #ffffff, #eaf7ff);
+}
+body.archive header.arch-header .btn.primary{
+  border-color: rgba(255,95,174,.65);
+  background: linear-gradient(180deg, #fff, #ffe1f1);
+  color:#3b1740;
+}
+
+/* =========================================================
+   Panel
+   ========================================================= */
+body.archive .panel{
+  margin-top:12px;
+  border-radius: var(--r2);
+  border: 2px solid var(--accent-55);
+  background: linear-gradient(180deg, #ffffff, #f7f2ff);
+  box-shadow: var(--shadow), var(--bevel-out);
+  overflow:hidden;
+}
+
+body.archive .panelHead{
+  padding:14px;
+  border-bottom: 1px solid var(--arch-line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.78)),
+    radial-gradient(900px 260px at 0% 0%, rgba(255,95,174,.12), transparent 60%),
+    radial-gradient(900px 260px at 100% 0%, rgba(84,215,255,.12), transparent 60%);
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:flex-start;
+}
+
+body.archive .metaRow{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+body.archive .pill{
+  border:2px solid var(--accent-18);
+  background: linear-gradient(180deg, #ffffff, #faf7ff);
+  box-shadow: var(--bevel-out);
+  color: rgba(20,12,40,.92);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 1000;
+  font-size: 12px;
+  white-space:nowrap;
+}
+
+/* 月バー */
+body.archive .monthBar{
+  padding:10px 12px 12px;
+  border-bottom: 1px solid var(--arch-line);
+  background: rgba(255,255,255,.78);
+
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+body.archive .monthBar .left{ color:var(--muted); font-size:12px; font-weight:1000; }
+body.archive .monthBar .right{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+body.archive #btnCollapseAll,
+body.archive #btnExpandWithData{
+  border-color: rgba(84,215,255,.55);
+  background: linear-gradient(180deg, #ffffff, #eaf7ff);
+}
+body.archive #btnBuildMonthStats{
+  border-color: rgba(255,95,174,.65);
+  background: linear-gradient(180deg, #ffffff, #ffe1f1);
+  color:#3b1740;
+}
+
+body.archive .dayList{
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* =========================================================
+   Day
+   ========================================================= */
+body.archive details.day{
+  --dayFrame: rgba(107,86,255,.35);
+  --dayBarDeep: rgba(166,155,255,.68);
+  --dayInk: var(--ink);
+
+  --sumGrad: var(--seatbarC);
+  --sumLine: rgba(120,110,255,.26);
+
+  --dayCardFrame: rgba(120,110,255,.35);
+
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+body.archive details.day[data-kind="open"]{
+  --dayFrame: rgba(255,95,174,.55);
+  --dayBarDeep: rgba(255,95,174,.95);
+  --sumGrad: linear-gradient(180deg, rgba(255,174,214,.98), rgba(255,126,188,.93));
+  --sumLine: rgba(255,95,174,.45);
+  --dayCardFrame: rgba(255,95,174,.55);
+}
+body.archive details.day[data-kind="noguest"]{
+  --dayFrame: rgba(84,215,255,.60);
+  --dayBarDeep: rgba(84,215,255,.95);
+  --sumGrad: linear-gradient(180deg, rgba(191,239,255,.98), rgba(140,224,255,.93));
+  --sumLine: rgba(84,215,255,.45);
+  --dayCardFrame: rgba(84,215,255,.55);
+}
+body.archive details.day[data-kind="closed"]{
+  --dayFrame: rgba(107,86,255,.55);
+  --dayBarDeep: rgba(107,86,255,.86);
+  --sumGrad: linear-gradient(180deg, rgba(224,219,255,.98), rgba(178,168,255,.93));
+  --sumLine: rgba(107,86,255,.45);
+  --dayCardFrame: rgba(107,86,255,.55);
+}
+
+/* Summary（帯） */
+body.archive details.day > summary{
+  cursor:pointer;
+  list-style:none;
+
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+
+  position: relative;
+  margin: 0;
+  padding:12px 12px 12px 26px;
+  border-radius: 18px;
+
+  background: var(--sumGrad);
+  border: 2px solid color-mix(in srgb, var(--sumLine) 70%, rgba(255,255,255,0));
+  border-bottom-color: var(--sumLine);
+
+  box-shadow:
+    inset 0 3px 0 var(--sumHi),
+    inset 3px 0 0 rgba(255,255,255,.70),
+    inset 0 -3px 0 var(--sumLo),
+    inset -3px 0 0 rgba(68,50,140,.10),
+    0 10px 18px rgba(68,50,140,.10);
+}
+body.archive summary::-webkit-details-marker{ display:none; }
+
+body.archive details.day > summary::before{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:10px;
+  bottom:10px;
+  width:8px;
+  border-radius:999px;
+  background: var(--dayBarDeep);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.50),
+    inset 0 -1px 0 rgba(68,50,140,.12);
+}
+
+body.archive details.day[open] > summary{
+  filter: saturate(1.02);
+  box-shadow:
+    inset 0 3px 0 var(--sumHi),
+    inset 3px 0 0 rgba(255,255,255,.70),
+    inset 0 -3px 0 var(--sumLo),
+    inset -3px 0 0 rgba(68,50,140,.10),
+    0 14px 22px rgba(68,50,140,.14);
+  z-index: 2;
+}
+
+/* Summary inner */
+body.archive .dayLeft{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  min-width:0;
+  font-weight:1000;
+  color: var(--dayInk);
+}
+body.archive .dayNum{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:14px;
+
+  border:2px solid rgba(0,0,0,.04);
+  background: linear-gradient(180deg, #ffffff, #faf7ff);
+  box-shadow: var(--bevel-out);
+  white-space:nowrap;
+}
+body.archive .dayNum .d{ font-size:20px; font-weight:1000; line-height:1; }
+body.archive .dayNum .w{
+  font-size:12px;
+  font-weight:1000;
+  line-height:1;
+  padding:3px 8px;
+  border-radius:999px;
+  background: var(--accent-10);
+  color: rgba(42,33,80,.78);
+}
+
+body.archive .dayText{ min-width:0; flex: 1 1 auto; }
+
+/* ★PCは統計ピルは横一列（折り返し禁止） */
+body.archive .barStatsPills{
+  display:flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+}
+body.archive .barStatsPills .pill{
+  display:inline-flex;
+  flex: 0 0 auto;
+  align-items:center;
+  justify-content:center;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Right side */
+body.archive .dayRight{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+}
+body.archive details.day .dayAct{
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:999px;
+
+  border: 2px solid var(--dayFrame);
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+  box-shadow: var(--bevel-out), 0 10px 18px rgba(68,50,140,.10);
+  font-weight:1000;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+/* ★メモはアイコンのみ（データあり/なし両方で統一） */
+body.archive .memoIcon{
+  width:34px; height:34px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid var(--accent-18);
+  background: linear-gradient(180deg, #ffffff, #faf7ff);
+  box-shadow: var(--bevel-out);
+  pointer-events:none;
+  user-select:none;
+}
+
+/* 旧メモピルは殺す（残骸防止） */
+body.archive .memoPill{ display:none !important; }
+
+/* Open body */
+body.archive .dayBody{ padding:12px; border-top: 0; background: transparent; }
+body.archive details.day[open] .dayBody{
+  position: relative;
+  z-index: 1;
+
+  margin: -8px 0 0;
+  padding: 16px 12px 12px;
+
+  border: 2px solid var(--dayCardFrame);
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+
+  background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.82));
+  box-shadow: var(--shadow), var(--bevel-out);
+}
+
+/* chips */
+body.archive .dayOrder{ display:flex; gap:8px; margin-bottom:10px; }
+body.archive .dayOrder .chip{
+  cursor:pointer;
+  border:2px solid var(--accent-18);
+  padding:8px 12px;
+  border-radius:999px;
+  background: linear-gradient(180deg, #ffffff, #faf7ff);
+  box-shadow: var(--bevel-out);
+  font-weight:1000;
+  font-size:12px;
+}
+body.archive .dayOrder .chip.on{
+  color:#fff;
+  border-color: rgba(255,95,174,.35);
+  background: linear-gradient(135deg, var(--pink), var(--accent));
+  box-shadow: 0 8px 0 rgba(255,95,174,.12);
+}
+
+/* =========================================================
+   TABLE (single frame / no double border)
+   ========================================================= */
+
+/* ★外側だけに枠。中は「線」だけ。 */
+body.archive .tableWrap{
+  border: 2px solid var(--tblFrame);
+  border-radius: 16px;
+  overflow:hidden;
+  background: rgba(255,255,255,.92);
+  box-shadow: none;
+
+  /* 紫枠や疑似要素が紛れてても殺す */
+  outline: 0 !important;
+}
+body.archive .tableWrap::before,
+body.archive .tableWrap::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* ★テーブル自身には枠を持たせない（2重の原因） */
+body.archive table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  table-layout: fixed;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ===== header ===== */
+body.archive thead th{
+  position:sticky; top:0;
+  background: linear-gradient(180deg, #ffe1f1, #ff6fb2);
+  color: rgba(42,33,80,.92);
+  padding:10px 8px;
+  font-size:12px;
+  font-weight:1000;
+  white-space:nowrap;
+
+  border-bottom:2px solid rgba(255,95,174,.35);
+  border-right:1px solid var(--tblLine);
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.archive thead th:last-child{ border-right:none; }
+
+/* ===== body ===== */
+body.archive tbody td{
+  padding:10px 8px;
+  font-size:13px;
+  font-weight:800;
+  color: rgba(42,33,80,.92);
+
+  border-bottom:1px solid var(--arch-line);
+  border-right:1px solid rgba(255,95,174,.14);
+
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  vertical-align: middle;
+}
+body.archive tbody td:last-child{ border-right:none; }
+body.archive tbody tr:last-child td{ border-bottom:0; }
+body.archive tbody tr:hover td{ background:#fff3d1; }
+
+/* ===== 区分バッジ（table用） ===== */
+body.archive .kbn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding: 2px 8px;
+  border-radius:999px;
+  font-weight:1000;
+  font-size: 12px;
+  border:2px solid rgba(0,0,0,.08);
+  background: linear-gradient(180deg, #fff, #faf7ff);
+  color: rgba(42,33,80,.90);
+}
+body.archive .kbn.new{
+  border-color: rgba(255,95,174,.55);
+  background: linear-gradient(180deg, #fff, #ffe1f1);
+  color: #5a1a4a;
+}
+body.archive .kbn.repeat{
+  border-color: rgba(84,215,255,.55);
+  background: linear-gradient(180deg, #fff, #eaf7ff);
+  color: #1b3f57;
+}
+
+/* =========================================================
+   FIX 1: 区分列を少し広げる
+   - colgroupがあるならそれを最優先
+   - 無い場合でも nth-child(4) を広げる
+   ========================================================= */
+
+/* colgroup（HTML側に <col class="col-kbn"> があるなら効く） */
+body.archive table col.col-kbn{ width: 112px; } /* ★92→112に拡大 */
+
+/* colgroupが無い/効かない場合の保険 */
+body.archive thead th:nth-child(4),
+body.archive tbody td:nth-child(4){
+  width: 112px;
+}
+
+/* ついでに No/累計/卓番は少し詰めたい時の保険（必要ならON）
+body.archive thead th:nth-child(1),
+body.archive tbody td:nth-child(1){ width: 44px; }
+body.archive thead th:nth-child(2),
+body.archive tbody td:nth-child(2){ width: 60px; }
+body.archive thead th:nth-child(3),
+body.archive tbody td:nth-child(3){ width: 64px; }
+*/
+
+/* memo full */
+body.archive .memoFull{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:14px;
+
+  border: 2px solid rgba(255,95,174,.45);
+  background: rgba(255,255,255,.92);
+  box-shadow: none;
+
+  font-weight:900;
+  color: rgba(26,16,32,.82);
+  white-space: pre-wrap;
+}
+
+body.archive .empty{
+  padding:14px;
+  color: var(--muted);
+  text-align:center;
+  font-weight:1000;
+  white-space:pre-wrap;
+}
+body.archive .sr-only{
+  position:absolute;
+  width:1px; height:1px;
+  padding:0; margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+
+/* 土日 */
+body.archive details.day[data-dow="土"] .dayNum .w{
+  background: rgba(84,215,255,.50);
+  color: rgba(20,40,80,.88);
+}
+body.archive details.day[data-dow="日"] .dayNum .w{
+  background: rgba(255,95,174,.50);
+  color: rgba(70,18,45,.88);
+}
+
+  </style>
+</head>
+
+<body class="archive">
+  <div class="app">
+
+    <!-- JSが参照しても落ちないように置いておく（見せない） -->
+    <div id="status" class="sr-only">OK</div>
+
+    <!-- ========== HEADER ========== -->
+    <header class="arch-header">
+      <div class="topbar">
+        <div class="arch-left">
+          <div class="arch-month" id="hdrMonth">----</div>
+        </div>
+
+        <div class="arch-controls">
+          <div class="field" title="月">
+            <input type="month" id="monthPicker" />
+          </div>
+
+          <div class="field" title="検索（席/名前/メモなど）">
+            <span class="ico">🔎</span>
+            <input type="text" id="q" placeholder="例:BOX2 / ささき / 延長" />
+          </div>
+
+          <button class="btn ghost" id="btnJumpLatest" type="button">最新日に飛ぶ</button>
+          <button class="btn primary" id="btnReload" type="button">再読み</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========== PANEL（月全体） ========== -->
+    <section class="panel" id="panel">
+      <div class="panelHead">
+        <div>
+          <div class="pill" id="monthBadge">--</div>
+        </div>
+
+        <div class="metaRow">
+          <div class="pill" id="monthStatPill">月統計:未計算</div>
+          <div class="pill" id="monthSearchPill">検索:なし</div>
+        </div>
+      </div>
+
+      <div class="monthBar">
+        <div class="left" id="monthBarLeft">月統計は「月統計を作る」で計算できます。</div>
+        <div class="right">
+          <button class="btn ghost" id="btnCollapseAll" type="button">全部たたむ</button>
+          <button class="btn ghost" id="btnExpandWithData" type="button">データ日だけ開く</button>
+          <button class="btn primary" id="btnBuildMonthStats" type="button">月統計を作る</button>
+        </div>
+      </div>
+
+      <div class="dayList" id="dayList"></div>
+    </section>
+
+    <div class="empty" style="margin-top:12px;">
+      ※ 日別統計（延長率/平均滞在など）は、その日を開いた時に自動計算されます。
+    </div>
+
+  </div><!-- /.app -->
+
+<script>
+"use strict";
+
+/* ========= crash reporter（画面にエラーを出す） ========= */
+(function attachCrashReporter(){
+  const show = (title, err) => {
+    console.error(title, err);
+    const box = document.getElementById("fatalBox") || (() => {
+      const d = document.createElement("div");
+      d.id = "fatalBox";
+      d.style.cssText = `
+        position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 99999;
+        padding: 12px 14px; border-radius: 14px;
+        border: 2px solid rgba(255,95,182,.55);
+        background: #fff; color: #2a2150;
+        box-shadow: 0 10px 24px rgba(0,0,0,.18);
+        font: 12px/1.45 Meiryo, system-ui, sans-serif;
+        white-space: pre-wrap;
+      `;
+      document.body.appendChild(d);
+      return d;
+    })();
+    const msg = err?.stack || err?.message || String(err);
+    box.textContent = `🚨 ${title}\n\n${msg}`;
+  };
+
+  window.addEventListener("error", (e) => show("JS Error", e.error || e.message));
+  window.addEventListener("unhandledrejection", (e) => show("Promise Rejection", e.reason));
+})();
+
+/* ========= 設定 ========= */
+const API_URL = "https://script.google.com/macros/s/AKfycbzEmg4re7mtYNcktLIk2hodRzuREBJsZHyHG3Nh_fep-FhGjm7TNcYCqRRaQAjRWKrghA/exec";
+const ENDPOINTS = {
+  month: (ym) => `${API_URL}?action=month&ym=${encodeURIComponent(ym)}`,
+  day:   (d)  => `${API_URL}?action=day&bizDate=${encodeURIComponent(d)}`,
+  setDay:  (d, status, note) => `${API_URL}?action=setday&bizDate=${encodeURIComponent(d)}&status=${encodeURIComponent(status)}&note=${encodeURIComponent(note||"")}`,
+  clearDay:(d) => `${API_URL}?action=clearday&bizDate=${encodeURIComponent(d)}`
+};
+
+const CACHE_PREFIX = "platinataku_archive_day_table_";
+const CACHE_TTL_MS = 1000 * 60 * 10;
+
+/* ========= util ========= */
+const $ = (s)=>document.querySelector(s);
+const pad2=(n)=>String(n).padStart(2,"0");
+
+const el = (tag, attrs={}, children=[])=>{
+  const n=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==="class") n.className=v;
+    else if(k==="text") n.textContent=v;
+    else if(k==="html") n.innerHTML=v;
+    else if(k.startsWith("on") && typeof v==="function") n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k,v);
+  }
+  for(const c of children) n.appendChild(c);
+  return n;
+};
+
+function toYM(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+function ymLabel(ym){ const [y,m]=ym.split("-"); return `${y}年${Number(m)}月`; }
+function daysInMonth(ym){ const [y,m]=ym.split("-").map(Number); return new Date(y,m,0).getDate(); }
+function dateStr(ym, day){ return `${ym}-${pad2(day)}`; }
+function fmtBizDateSlash(ds){
+  const [y,m,d] = String(ds).split("-");
+  return `${Number(y)}/${Number(m)}/${Number(d)}`;
+}
+function dayNumber(ds){ return Number(String(ds).split("-")[2] || 0); }
+
+function dowLabel(ds){
+  const d=new Date(ds+"T00:00:00");
+  return ["日","月","火","水","木","金","土"][d.getDay()];
+}
+function safeDow(iso){
+  try{ return dowLabel(iso) || ""; }
+  catch(e){ console.warn("dowLabel failed:", iso, e); return ""; }
+}
+function clipText(s, n){
+  s = String(s || "").trim();
+  if(!s) return "";
+  return (s.length > n) ? (s.slice(0, n) + "…") : s;
+}
+
+/* ★statusが消えても落ちない */
+function setStatus(t){
+  const s = document.getElementById("status");
+  if(s) s.textContent = String(t ?? "");
+}
+
+/* ===== JSON取得 ===== */
+async function fetchJSON(url){
+  const res = await fetch(url, { method:"GET", cache:"no-store" });
+  const text = await res.text();
+
+  try { return JSON.parse(text); } catch {}
+
+  // JSONP保険
+  const m = text.match(/^[\s\w$.]+\(\s*([\s\S]*)\s*\)\s*;?\s*$/);
+  if(m){
+    try { return JSON.parse(m[1]); } catch {}
+  }
+  throw new Error("Non-JSON response: " + text.slice(0, 160));
+}
+
+/* ===== cache ===== */
+function cacheGet(key){
+  try{
+    const v=localStorage.getItem(key);
+    if(!v) return null;
+    const o=JSON.parse(v);
+    if(Date.now()-o.t > CACHE_TTL_MS) return null;
+    return o.data;
+  }catch{ return null; }
+}
+function cacheSet(key,data){
+  try{ localStorage.setItem(key, JSON.stringify({t:Date.now(), data})); }catch{}
+}
+
+/* ========= 卓管理ツール方式：ISOは Date 復元してJST表示 ========= */
+const toHHMM = (d)=> `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+function fmtTime(v){
+  if(v == null) return "-";
+  if(v instanceof Date && !isNaN(v)) return toHHMM(v);
+
+  const s = String(v).trim();
+  if(!s) return "-";
+
+  const m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if(m) return `${pad2(Number(m[1]))}:${m[2]}`;
+
+  const dt = new Date(s);
+  if(!isNaN(dt)) return toHHMM(dt);
+
+  const m2 = s.match(/\b(\d{1,2}):(\d{2})\b/);
+  if(m2) return `${pad2(Number(m2[1]))}:${m2[2]}`;
+
+  return "-";
+}
+function diffMinutesByISO(inAt, outAt){
+  const a = new Date(inAt);
+  const b = new Date(outAt);
+  if(isNaN(a) || isNaN(b)) return null;
+  return Math.max(0, Math.floor((b - a) / 60000));
+}
+
+/* ========= 延長集計 ========= */
+function sumExtendMinutes(g){
+  const ex = Array.isArray(g.extends) ? g.extends : [];
+  let total = 0;
+  for(const it of ex){
+    if(typeof it === "number") total += it;
+    else if(typeof it === "string" && /^\d+$/.test(it)) total += Number(it);
+    else if(it && typeof it === "object"){
+      if(typeof it.min === "number") total += it.min;
+      else if(typeof it.minutes === "number") total += it.minutes;
+      else if(typeof it.m === "number") total += it.m;
+    }
+  }
+  return total;
+}
+function extendBreakdown(g){
+  const ex = Array.isArray(g.extends) ? g.extends : [];
+  const map = {};
+  for(const it of ex){
+    let m = null;
+    if(typeof it === "number") m = it;
+    else if(it && typeof it === "object"){
+      if(typeof it.min === "number") m = it.min;
+      else if(typeof it.minutes === "number") m = it.minutes;
+    }
+    if(m != null) map[m] = (map[m]||0)+1;
+  }
+  const keys = Object.keys(map).map(Number).sort((a,b)=>a-b);
+  const parts = keys.map(k=>`${k}:${map[k]}`);
+  const total = keys.reduce((acc,k)=>acc + k*map[k], 0);
+  return { parts, total };
+}
+
+/* ========= 新規/リピ判定 ========= */
+function guestTypeLabel(gt){
+  const s = String(gt||"").trim().toLowerCase();
+  if(["new","新規","shinki","first","初回","0"].includes(s)) return "新規";
+  if(["repeat","repeater","リピーター","リピ","1"].includes(s)) return "リピ";
+  if(!s) return "不明";
+  if(s.includes("new") || s.includes("新規") || s.includes("初")) return "新規";
+  if(s.includes("repeat") || s.includes("リピ") || s.includes("常連") || s.includes("再来")) return "リピ";
+  return "不明";
+}
+function guestTypeClass(gt){
+  const lbl = guestTypeLabel(gt);
+  if(lbl==="新規") return "new";
+  if(lbl==="リピ") return "repeat";
+  return "other";
+}
+
+/* ========= stats ========= */
+function emptyStats(){
+  return {
+    groupsTotal:0, peopleTotal:0,
+    groupsNew:0, peopleNew:0,
+    groupsRepeat:0, peopleRepeat:0,
+    groupsOther:0, peopleOther:0,
+    extendedGroups:0, extendMinutesTotal:0,
+    staySamples:0, stayMinutesTotal:0
+  };
+}
+function calcStats(groups){
+  const st=emptyStats();
+  for(const g of (groups||[])){
+    const p=Number(g.partySize||1);
+    const lbl = guestTypeLabel(g.guestType);
+
+    st.groupsTotal += 1;
+    st.peopleTotal += p;
+
+    if(lbl==="新規"){ st.groupsNew++; st.peopleNew += p; }
+    else if(lbl==="リピ"){ st.groupsRepeat++; st.peopleRepeat += p; }
+    else { st.groupsOther++; st.peopleOther += p; }
+
+    const exMin = sumExtendMinutes(g);
+    if(exMin>0){ st.extendedGroups++; st.extendMinutesTotal += exMin; }
+
+    if(g.checkInAt && g.checkOutAt){
+      const stay = diffMinutesByISO(g.checkInAt, g.checkOutAt);
+      if(stay != null){
+        st.staySamples++;
+        st.stayMinutesTotal += stay;
+      }
+    }
+  }
+  return st;
+}
+function statPills(st){
+  const extRate = st.groupsTotal ? Math.round(st.extendedGroups / st.groupsTotal * 100) : 0;
+  const avgStay = st.staySamples ? Math.round(st.stayMinutesTotal / st.staySamples) : 0;
+  const avgExt  = st.groupsTotal ? Math.round(st.extendMinutesTotal / st.groupsTotal) : 0;
+
+  return [
+    `合計${st.groupsTotal}組${st.peopleTotal}名`,
+    `新規${st.groupsNew}組${st.peopleNew}名`,
+    `リピ${st.groupsRepeat}組${st.peopleRepeat}名`,
+    `延長率${extRate}%`,
+    `平均滞在${avgStay}分`,
+    `平均延長${avgExt}分`
+  ];
+}
+
+/* ========= state ========= */
+const state = {
+  ym: toYM(new Date()),
+  q: "",
+  days: [],
+  latestWithData: null,
+  monthStats: emptyStats(),
+  dayCache: {},
+  dayOrder: {}
+};
+
+/* ========= fatal ========= */
+function showFatal(e){
+  console.error(e);
+  setStatus("失敗");
+  const list = $("#dayList");
+  if(list){
+    list.innerHTML = "";
+    list.appendChild(el("div",{class:"empty", text:`月の読み込みに失敗🥲（${e.message}）`}));
+  }
+}
+
+/* ========= meta editor（営業日＝メモのみ） ========= */
+function openDayMetaEditor(dayObj, opts={}){
+  const memoOnly = !!opts.memoOnly;
+
+  const existed = document.getElementById("dayMetaModal");
+  if(existed) existed.remove();
+
+  const back = el("div", {
+    id:"dayMetaModal",
+    style: `
+      position:fixed; inset:0; z-index:9999;
+      background:rgba(0,0,0,.25);
+      display:flex; align-items:center; justify-content:center;
+      padding:16px;
+    `
+  });
+
+  const card = el("div", {
+    style: `
+      width:min(520px, 96vw);
+      border:1px solid var(--line);
+      border-radius:var(--r2);
+      background:linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+      box-shadow:var(--shadow);
+      padding:14px;
+    `
+  });
+
+  const title = el("div",{style:"font-weight:1000; font-size:16px; margin-bottom:10px;"},
+    [document.createTextNode(`🗓️ ${fmtBizDateSlash(dayObj.date)}（${safeDow(dayObj.date)}）の設定`)]
+  );
+
+  const noteIn = el("input", {
+    value: dayObj.note || "",
+    placeholder: memoOnly ? "メモ（営業日:メモのみ編集できます）" : "メモ（例:成人の日営業、雪で臨休…）",
+    style: `
+      width:100%;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.86);
+      font-weight:900;
+      margin:6px 0 12px;
+    `
+  });
+
+  let statusSel = null;
+  let fixedStatus = "unset";
+
+  if(!memoOnly){
+    statusSel = el("select", {
+      style: `
+        width:100%;
+        padding:10px 12px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:rgba(255,255,255,.86);
+        font-weight:900;
+        margin:6px 0 10px;
+      `
+    }, [
+      el("option",{value:"unset",  text:"ー（未設定）にする"}),
+      el("option",{value:"closed", text:"店休にする"}),
+      el("option",{value:"noguest",text:"ノーゲスにする"}),
+    ]);
+    const cur = String(dayObj.status || "unset").toLowerCase();
+    statusSel.value = (cur==="closed"||cur==="noguest") ? cur : "unset";
+  }else{
+    fixedStatus = "unset";
+  }
+
+  const row = el("div",{style:"display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;"});
+  const btnClose = el("button",{class:"btn ghost", type:"button", text:"閉じる", onclick:()=>back.remove()});
+
+  const btnSave = el("button",{class:"btn primary", type:"button", text:"保存", onclick: async ()=>{
+    try{
+      const st = memoOnly ? fixedStatus : statusSel.value;
+      const note = noteIn.value || "";
+
+      if(st==="unset" && !note.trim()){
+        await fetchJSON(ENDPOINTS.clearDay(dayObj.date));
+      }else{
+        await fetchJSON(ENDPOINTS.setDay(dayObj.date, st, note));
+      }
+
+      back.remove();
+      await loadMonth();
+      refreshOpenDays();
+    }catch(e){
+      alert("失敗: " + e.message);
+    }
+  }});
+
+  row.append(btnClose, btnSave);
+
+  card.append(title);
+  if(!memoOnly){
+    card.append(el("div",{class:"pill", text:"ステータス（データが無い日だけ）"}));
+    card.append(statusSel);
+  }else{
+    card.append(el("div",{class:"pill", text:"営業日:メモのみ編集できます"}));
+  }
+  card.append(el("div",{class:"pill", text:"メモ（任意）"}));
+  card.append(noteIn);
+  card.append(row);
+
+  back.appendChild(card);
+  back.addEventListener("click",(ev)=>{ if(ev.target===back) back.remove(); });
+  document.body.appendChild(back);
+}
+
+/* ========= render month ========= */
+function renderMonth(){
+  const label = ymLabel(state.ym);
+  $("#hdrMonth").textContent = label;
+
+  state.days.sort((a,b)=> String(a.date).localeCompare(String(b.date)));
+
+  // 日数/営業日数（データ日 + ノーゲス日）
+const totalDays = daysInMonth(state.ym);
+const bizDays = state.days.filter(x => {
+  const cnt = Number(x.count || 0);
+  const st  = String(x.status || "").toLowerCase();
+  return (cnt > 0) || (cnt === 0 && st === "noguest"); // データ日 or ノーゲス日
+}).length;
+
+$("#monthBadge").textContent = `日数:${totalDays}日 / 営業日:${bizDays}日`;
+
+
+  $("#monthSearchPill").textContent = state.q ? `検索:${state.q}` : "検索:なし";
+  $("#dayList").innerHTML = "";
+
+  for(const d of state.days){
+    const day = dayNumber(d.date);
+    const dow = safeDow(d.date);
+    const hasData = Number(d.count||0) > 0;
+
+    const note = (d.note ?? "").toString().trim();
+    const hasMemo = !!note;
+
+    const st = String(d.status || "unset").toLowerCase();
+    const isClosed  = (!hasData && st === "closed");
+    const isNoGuest = (!hasData && st === "noguest");
+    const kind = hasData ? "open" : (isClosed ? "closed" : (isNoGuest ? "noguest" : "unset"));
+
+    const det = el("details", { class:"day", "data-date": d.date });
+    det.setAttribute("data-kind", kind);
+    det.setAttribute("data-dow", dow || "");
+
+    const locked = (!hasData && !hasMemo);
+    if(locked){
+      det.dataset.locked = "1";
+      det.setAttribute("data-locked","1");
+    }
+
+    const left = el("div",{class:"dayLeft"},[
+      el("div",{class:"dayNum"},[
+        el("span",{class:"d", text:String(day)}),
+        el("span",{class:"w", text:dow || ""})
+      ]),
+      el("div",{class:"dayText"},[
+        hasData
+          ? el("div",{class:"barStatsPills", id:`barstats-${d.date}`},[
+              el("div",{class:"pill", text:"統計:未計算"})
+            ])
+          : el("div",{class:"barStatsPills"})
+      ])
+    ]);
+
+    const right = el("div",{class:"dayRight"},[]);
+
+    /* ★メモは「データあり/なし」どっちも “アイコン💭” に統一 */
+    if(hasMemo){
+      right.appendChild(el("span",{ class:"memoIcon", title:"メモあり（開くと全文）", text:"💭" }));
+    }
+
+    let labelR = "";
+    if(hasData) labelR = `${d.count}件`;
+    else if(isClosed) labelR = "店休";
+    else if(isNoGuest) labelR = "ノーゲス";
+    else labelR = "ー";
+
+    const btnRight = el("button",{
+      type:"button",
+      class:"dayAct",
+      onclick:(ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        openDayMetaEditor(d, { memoOnly: hasData });
+      }
+    },[
+      el("span",{class:"lab", text: labelR}),
+      el("span",{class:"ic",  text:"✎"})
+    ]);
+
+    right.appendChild(btnRight);
+
+    const sum = el("summary",{},[ left, right ]);
+    sum.addEventListener("click", (ev)=>{ if(locked) ev.preventDefault(); });
+
+    const bodyKids = [];
+
+    if(!hasData){
+      if(hasMemo) bodyKids.push(el("div",{class:"memoFull", text:`📝 ${note}`}));
+    }else{
+      if(!state.dayOrder[d.date]) state.dayOrder[d.date] = "in";
+
+      bodyKids.push(
+        el("div",{class:"dayCard"},[
+          el("div",{class:"dayOrder"},[
+            el("button",{
+              type:"button",
+              class:`chip ${state.dayOrder[d.date]==="in" ? "on" : ""}`,
+              id:`ord-in-${d.date}`,
+              text:"入店順",
+              onclick:(ev)=>{ ev.preventDefault(); ev.stopPropagation(); setDayOrder(d.date, "in"); }
+            }),
+            el("button",{
+              type:"button",
+              class:`chip ${state.dayOrder[d.date]==="out" ? "on" : ""}`,
+              id:`ord-out-${d.date}`,
+              text:"退店順",
+              onclick:(ev)=>{ ev.preventDefault(); ev.stopPropagation(); setDayOrder(d.date, "out"); }
+            })
+          ]),
+
+          /* Desktop: table / Mobile: recvList (cards) */
+          el("div",{class:"tableWrap"},[
+            el("table",{id:`tbl-${d.date}`},[
+              el("thead",{},[
+                el("tr",{},[
+                  el("th",{text:"No"}),
+                  el("th",{text:"累計"}),
+                  el("th",{text:"卓番"}),
+                  el("th",{text:"区分"}),
+                  el("th",{text:"お客様名"}),
+                  el("th",{text:"人数"}),
+                  el("th",{text:"入店"}),
+                  el("th",{text:"退店"}),
+                  el("th",{text:"延長"})
+                ])
+              ]),
+              el("tbody",{id:`tb-${d.date}`},[
+                el("tr",{},[
+                  el("td",{colspan:"9", class:"empty", text:"開くと読み込みます💿"})
+                ])
+              ])
+            ])
+          ]),
+
+          el("div",{class:"recvList", id:`cards-${d.date}`},[
+            el("div",{class:"empty", text:"開くと読み込みます💿"})
+          ]),
+
+          el("div",{id:`memo-${d.date}`})
+        ])
+      );
+    }
+
+    const body = el("div",{class:"dayBody", id:`body-${d.date}`}, bodyKids);
+
+    det.appendChild(sum);
+    det.appendChild(body);
+
+    det.addEventListener("toggle", async ()=>{
+      if(!det.open) return;
+      if(locked){ det.open = false; return; }
+      if(!hasData) return;
+      await loadDay(det, d.date);
+    });
+
+    $("#dayList").appendChild(det);
+  }
+}
+
+/* ========= 並び替え ========= */
+function setDayOrder(date, mode){
+  state.dayOrder[date] = mode;
+  const bin = document.getElementById(`ord-in-${date}`);
+  const bout = document.getElementById(`ord-out-${date}`);
+  if(bin && bout){
+    bin.classList.toggle("on", mode === "in");
+    bout.classList.toggle("on", mode === "out");
+  }
+  if(state.dayCache[date]) renderDayFromCache(date);
+}
+
+/* ========= day parts ========= */
+function renderDayMemo(date, note){
+  const box = document.getElementById(`memo-${date}`);
+  if(!box) return;
+  box.innerHTML = "";
+  const s = (note ?? "").toString().trim();
+  if(!s) return;
+  box.appendChild(el("div",{class:"memoFull", text:`📝 ${s}`}));
+}
+function renderBarStats(date, pills){
+  const box = document.getElementById(`barstats-${date}`);
+  if(!box) return;
+  box.innerHTML = "";
+  for(const t of (pills || [])) box.appendChild(el("div",{class:"pill", text:t}));
+}
+
+/* ========= build list (filter + sort) ========= */
+function filteredSortedGroups(groups, bizDate){
+  const q = (state.q || "").trim().toLowerCase();
+  let list = (groups||[]).filter(g=>{
+    if(!q) return true;
+    try{ return JSON.stringify(g).toLowerCase().includes(q); }
+    catch{ return true; }
+  });
+
+  const mode = state.dayOrder[bizDate] || "in";
+  list.sort((a,b)=>{
+    const aIn = Date.parse(a.checkInAt||"");
+    const bIn = Date.parse(b.checkInAt||"");
+    const aOut = a.checkOutAt ? Date.parse(a.checkOutAt) : NaN;
+    const bOut = b.checkOutAt ? Date.parse(b.checkOutAt) : NaN;
+
+    if(mode === "in") return (isNaN(aIn)?0:aIn) - (isNaN(bIn)?0:bIn);
+
+    const aKey = !isNaN(aOut) ? aOut : (isNaN(aIn)?0:aIn);
+    const bKey = !isNaN(bOut) ? bOut : (isNaN(bIn)?0:bIn);
+    return aKey - bKey;
+  });
+
+  return list;
+}
+
+/* ========= desktop table rows ========= */
+function buildTableRows(groups, bizDate){
+  const list = filteredSortedGroups(groups, bizDate);
+
+  let cumPeople = 0;
+
+  return list.map((g, idx)=>{
+    const p = Number(g.partySize||0);
+    cumPeople += p;
+
+    const seats = String(g.primarySeat || "");
+    const lbl = guestTypeLabel(g.guestType);
+    const kbnClass = guestTypeClass(g.guestType);
+    const kbnIcon  = (lbl==="新規") ? "🆕" : (lbl==="リピ") ? "🔁" : "✨";
+
+    const inT  = fmtTime(g.checkInAt);
+    const outT = g.checkOutAt ? fmtTime(g.checkOutAt) : "-";
+
+    const ex = extendBreakdown(g);
+    const exText = ex.parts.length ? `${ex.parts.join("  ")} ｜ 合計${ex.total}分` : "なし";
+
+    return el("tr",{},[
+      el("td",{ "data-label":"No", text:String(idx+1) }),
+      el("td",{ "data-label":"累計", text:String(cumPeople) }),
+      el("td",{ "data-label":"卓番", text:seats }),
+      el("td",{ "data-label":"区分" },[
+        el("span",{ class:`kbn ${kbnClass}`, text:`${kbnIcon} ${lbl}` })
+      ]),
+      el("td",{ "data-label":"お客様名", text:String(g.name||"") }),
+      el("td",{ "data-label":"人数", text:String(p||"") }),
+      el("td",{ "data-label":"入店", text:inT }),
+      el("td",{ "data-label":"退店", text:outT }),
+      el("td",{ "data-label":"延長", text:exText })
+    ]);
+  });
+}
+
+/* ========= mobile cards ========= */
+function buildRecvCards(groups, bizDate){
+  const list = filteredSortedGroups(groups, bizDate);
+  let cumPeople = 0;
+
+  return list.map((g, idx)=>{
+    const p = Number(g.partySize||0);
+    cumPeople += p;
+
+    const seats = String(g.primarySeat || "");
+    const lbl = guestTypeLabel(g.guestType);
+
+    const inT  = fmtTime(g.checkInAt);
+    const outT = g.checkOutAt ? fmtTime(g.checkOutAt) : "-";
+
+    const ex = extendBreakdown(g);
+    const exText = ex.parts.length ? `${ex.parts.join("  ")} ｜ 合計${ex.total}分` : "なし";
+
+    const card = el("div",{class:"recvCard"},[
+      /* Row 1: No / 累計 */
+      el("div",{class:"recvRow"},[
+        el("div",{class:"recvCell isLabel", text:"No"}),
+        el("div",{class:"recvCell isVal", text:String(idx+1)}),
+        el("div",{class:"recvCell isLabel", text:"累計"}),
+        el("div",{class:"recvCell isVal", text:String(cumPeople)}),
+      ]),
+
+      /* Row 2: 卓番 / 人数 */
+      el("div",{class:"recvRow"},[
+        el("div",{class:"recvCell isLabel", text:"卓番"}),
+        el("div",{class:"recvCell isVal", text:seats || "-"}),
+        el("div",{class:"recvCell isLabel", text:"人数"}),
+        el("div",{class:"recvCell isVal", text:String(p||"-")}),
+      ]),
+
+      /* Row 3: 区分(2マス) + お名前(1:3) */
+      el("div",{class:"recvRow kbnName"},[
+        el("div",{class:"recvCell isLabel", text:"区分"}),
+        el("div",{class:"recvCell isVal"},[
+          el("span",{class:"kbnBadge", "data-kbn": lbl, text: lbl })
+        ]),
+        el("div",{class:"recvCell isLabel", text:"お名前"}),
+        el("div",{class:"recvCell isVal left", text:String(g.name||"") || "-"}),
+      ]),
+
+      /* Row 4: 入店 / 退店 */
+      el("div",{class:"recvRow"},[
+        el("div",{class:"recvCell isLabel", text:"入店"}),
+        el("div",{class:"recvCell isVal", text:inT}),
+        el("div",{class:"recvCell isLabel", text:"退店"}),
+        el("div",{class:"recvCell isVal", text:outT}),
+      ]),
+
+      /* Row 5: 延長（長いので1:3ぶち抜き） */
+      el("div",{class:"recvRow long"},[
+        el("div",{class:"recvCell isLabel", text:"延長"}),
+        el("div",{class:"recvCell isVal", text:exText}),
+        el("div",{class:"recvCell isLabel", text:""}),
+        el("div",{class:"recvCell isVal", text:""}),
+      ]),
+    ]);
+
+    return card;
+  });
+}
+
+/* ========= render day from cache (TABLE ONLY) ========= */
+function renderDayFromCache(bizDate){
+  const cache = state.dayCache[bizDate];
+  if(!cache) return;
+
+  const groups = cache.groups || [];
+
+  // ---- table only ----
+  const tb = document.getElementById(`tb-${bizDate}`);
+  if(tb){
+    tb.innerHTML = "";
+
+    const rows = buildTableRows(groups, bizDate);
+    if(rows.length === 0){
+      tb.appendChild(el("tr",{},[
+        el("td",{colspan:"9", class:"empty", text:"条件に一致するログがありません🍬"})
+      ]));
+    }else{
+      for(const tr of rows) tb.appendChild(tr);
+    }
+  }
+
+  // ---- cards area is deprecated ----
+  const cards = document.getElementById(`cards-${bizDate}`);
+  if(cards){
+    cards.innerHTML = ""; // 何も出さない（注意文も出さない）
+  }
+}
+
+/* ========= load day ========= */
+async function loadDay(det, bizDate){
+  const cacheKey = CACHE_PREFIX + bizDate;
+  if(det?.dataset?.loading === "1") return;
+  if(det) det.dataset.loading = "1";
+
+  const tb = document.getElementById(`tb-${bizDate}`);
+  if(tb){
+    tb.innerHTML = "";
+    tb.appendChild(el("tr",{},[
+      el("td",{colspan:"9", class:"empty", text:"読み込み中…💿"})
+    ]));
+  }
+
+  const cards = document.getElementById(`cards-${bizDate}`);
+  if(cards){
+    cards.innerHTML = "";
+    cards.appendChild(el("div",{class:"empty", text:"読み込み中…💿"}));
+  }
+
+  try{
+    let data = cacheGet(cacheKey);
+    if(!data){
+      data = await fetchJSON(ENDPOINTS.day(bizDate));
+      cacheSet(cacheKey, data);
+    }
+
+    const groups = (data && data.groups) ? data.groups : [];
+    const st = calcStats(groups);
+    const pills = statPills(st);
+
+    const dayInfo = state.days.find(x=>x.date === bizDate);
+    const note = dayInfo ? (dayInfo.note ?? "") : "";
+
+    state.dayCache[bizDate] = { groups, stats: st, pills, note };
+
+    renderBarStats(bizDate, pills);
+    renderDayFromCache(bizDate);
+    renderDayMemo(bizDate, note);
+
+  }catch(e){
+    if(tb){
+      tb.innerHTML = "";
+      tb.appendChild(el("tr",{},[
+        el("td",{colspan:"9", class:"empty", text:`読み込み失敗…🥲（${e.message}）`})
+      ]));
+    }
+    if(cards){
+      cards.innerHTML = "";
+      cards.appendChild(el("div",{class:"empty", text:`読み込み失敗…🥲（${e.message}）`}));
+    }
+    console.error("loadDay failed", bizDate, e);
+  }finally{
+    if(det) det.dataset.loading = "0";
+  }
+}
+
+/* ========= month stats ========= */
+function addStats(a,b){
+  for(const k of Object.keys(emptyStats())){
+    a[k] = (a[k]||0) + (b[k]||0);
+  }
+  return a;
+}
+
+async function buildMonthStats(){
+  const dates = state.days.filter(d=>Number(d.count||0)>0).map(d=>d.date);
+  if(dates.length===0){
+    state.monthStats = emptyStats();
+    $("#monthStatPill").textContent = "月統計:データなし";
+    $("#monthBarLeft").textContent = "今月はまだデータがありません。";
+    return;
+  }
+
+  setStatus("月統計 集計中…");
+  $("#monthBarLeft").textContent = `集計中… 0/${dates.length}日`;
+
+  let total = emptyStats();
+  let done = 0;
+
+  const CONCURRENCY = 5;
+  const queue = dates.slice();
+
+  async function worker(){
+    while(queue.length){
+      const d = queue.shift();
+      const cacheKey = CACHE_PREFIX + d;
+      try{
+        let data = cacheGet(cacheKey);
+        if(!data){
+          data = await fetchJSON(ENDPOINTS.day(d));
+          cacheSet(cacheKey, data);
+        }
+        const groups = (data && data.groups) ? data.groups : [];
+        total = addStats(total, calcStats(groups));
+      }catch(e){
+        console.warn("monthStats day failed:", d, e);
+      }
+      done++;
+      $("#monthBarLeft").textContent = `集計中… ${done}/${dates.length}日`;
+    }
+  }
+
+  await Promise.all(Array.from({length:CONCURRENCY}, ()=>worker()));
+  state.monthStats = total;
+
+  const extRate = total.groupsTotal ? Math.round(total.extendedGroups/total.groupsTotal*100) : 0;
+  const avgStay = total.staySamples ? Math.round(total.stayMinutesTotal/total.staySamples) : 0;
+
+  // データ日あたり平均（組 / 名）
+  const dataDays = dates.length;
+  const avgGroups = (dataDays > 0) ? (total.groupsTotal / dataDays) : 0;
+  const avgPeople = (dataDays > 0) ? (total.peopleTotal / dataDays) : 0;
+
+  const fmt1 = (x)=>{
+    const v = Math.round(x * 10) / 10;
+    return (v % 1 === 0) ? String(v.toFixed(0)) : String(v.toFixed(1));
+  };
+
+  $("#monthStatPill").textContent =
+    `【合計:${total.groupsTotal}組${total.peopleTotal}名】【平均/日:${fmt1(avgGroups)}組${fmt1(avgPeople)}名】`;
+
+  $("#monthBarLeft").textContent =
+    ` 新規 ${total.groupsNew}組${total.peopleNew}名` +
+    ` ｜ リピ ${total.groupsRepeat}組${total.peopleRepeat}名` +
+    ` ｜ 延長率 ${extRate}% ｜ 平均滞在 ${avgStay}分`;
+
+  setStatus("OK");
+}
+
+/* ========= navigation ========= */
+function scrollToDate(ds){
+  const det = document.querySelector(`details.day[data-date="${ds}"]`);
+  if(!det) return;
+  det.scrollIntoView({behavior:"smooth", block:"start"});
+}
+function jumpToLatest(){
+  const d = state.latestWithData;
+  if(d){
+    scrollToDate(d);
+    const det = document.querySelector(`details.day[data-date="${d}"]`);
+    if(det) det.open = true;
+  }else{
+    scrollToDate(dateStr(state.ym,1));
+  }
+}
+function refreshOpenDays(){
+  document.querySelectorAll('details.day[open]').forEach(det=>{
+    const date = det.getAttribute("data-date");
+    const dayInfo = state.days.find(x=>x.date===date);
+    const hasData = !!(dayInfo && Number(dayInfo.count||0)>0);
+    if(!hasData) return;
+
+    if(state.dayCache[date]) renderDayFromCache(date);
+    else loadDay(det, date);
+  });
+}
+
+/* ========= load month ========= */
+async function loadMonth(){
+  setStatus("読み込み中…");
+  $("#monthSearchPill").textContent = state.q ? `検索:${state.q}` : "検索:なし";
+  state.latestWithData = null;
+
+  const data = await fetchJSON(ENDPOINTS.month(state.ym));
+  state.days = (data && data.days) ? data.days : [];
+
+  state.dayCache = {};
+  state.dayOrder = {};
+
+  for(const d of state.days){
+    if(Number(d.count||0)>0 && (!state.latestWithData || d.date > state.latestWithData)){
+      state.latestWithData = d.date;
+    }
+  }
+
+  renderMonth();
+  setStatus("OK");
+}
+
+/* ========= init ========= */
+(function init(){
+  const initYM = toYM(new Date());
+  state.ym = initYM;
+
+  const mp = $("#monthPicker");
+  mp.value = initYM;
+
+  $("#q").value = "";
+
+  mp.addEventListener("change", ()=>{
+    state.ym = mp.value || toYM(new Date());
+    loadMonth().catch(showFatal);
+  });
+
+  $("#q").addEventListener("input", (e)=>{
+    state.q = e.target.value.trim();
+    $("#monthSearchPill").textContent = state.q ? `検索:${state.q}` : "検索:なし";
+    refreshOpenDays();
+  });
+
+  $("#btnReload").addEventListener("click", ()=>loadMonth().catch(showFatal));
+  $("#btnJumpLatest").addEventListener("click", jumpToLatest);
+
+  $("#btnCollapseAll").addEventListener("click", ()=>{
+    document.querySelectorAll("details.day[open]").forEach(d=>d.open=false);
+  });
+
+  $("#btnExpandWithData").addEventListener("click", ()=>{
+    document.querySelectorAll("details.day").forEach(det=>{
+      const date=det.getAttribute("data-date");
+      const dayInfo = state.days.find(x=>x.date===date);
+      det.open = !!(dayInfo && Number(dayInfo.count||0)>0);
+    });
+  });
+
+  $("#btnBuildMonthStats").addEventListener("click", ()=>buildMonthStats().catch(console.warn));
+
+  // 画面サイズ切替で、開いてる日を再描画（テーブル⇔カード）
+  window.addEventListener("resize", ()=>{
+    refreshOpenDays();
+  });
+
+  loadMonth().catch(showFatal);
+})();
+</script>
+</body>
+</html>
