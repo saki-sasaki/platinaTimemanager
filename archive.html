@@ -144,6 +144,39 @@ body.archive header.arch-header .btn.primary{
   color:#3b1740;
 }
 
+/* ===== Rainbow button (for New Tracker link) ===== */
+body.archive .btn.rainbowBtn{
+  border: 2px solid transparent;
+  background:
+    /* inner fill */
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.74)) padding-box,
+    /* rainbow frame */
+    linear-gradient(90deg,
+      #ff8ec8, #7fe4ff, #ffe07a
+    ) border-box;
+
+  color: rgba(26,16,32,.92);
+  text-shadow: 0 1px 0 rgba(255,255,255,.85);
+
+  box-shadow:
+    var(--bevel-out),
+    0 10px 18px rgba(68,50,140,.10);
+}
+
+/* 押した時 */
+body.archive .btn.rainbowBtn:active{
+  transform: translateY(1px);
+  box-shadow: var(--bevel-in);
+}
+
+/* ホバーで少しキラっと */
+@media (hover:hover){
+  body.archive .btn.rainbowBtn:hover{
+    filter: saturate(1.15) contrast(1.03);
+  }
+}
+
+
 /* =========================================================
    Panel
    ========================================================= */
@@ -625,6 +658,19 @@ body.archive details.day[data-dow="日"] .dayNum .w{
           <div class="arch-month" id="hdrMonth">----</div>
         </div>
 
+		<a class="btn rainbowBtn"
+   href="https://platinatimemanager.pages.dev/"
+   target="_blank" rel="noopener">
+  💗
+</a>
+
+		<a class="btn rainbowBtn"
+   href="https://platinatimemanager.pages.dev/newtracker"
+   target="_blank" rel="noopener">
+  🆕
+</a>
+
+
         <div class="arch-controls">
           <div class="field" title="月">
             <input type="month" id="monthPicker" />
@@ -634,6 +680,8 @@ body.archive details.day[data-dow="日"] .dayNum .w{
             <span class="ico">🔎</span>
             <input type="text" id="q" placeholder="例:BOX2 / ささき / 延長" />
           </div>
+
+		   
 
           <button class="btn ghost" id="btnJumpLatest" type="button">最新日に飛ぶ</button>
           <button class="btn primary" id="btnReload" type="button">再読み</button>
